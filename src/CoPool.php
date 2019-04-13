@@ -20,7 +20,7 @@ class CoPool
     /**
      * 任务队列
      *
-     * @var Swoole\Coroutine\Channel
+     * @var \Swoole\Coroutine\Channel
      */
     private $taskQueue;
 
