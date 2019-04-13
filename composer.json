@@ -1,5 +1,6 @@
 {
     "name": "yurunsoft/swoole-co-pool",
+    "license": "MIT",
     "require": {
         
     },
