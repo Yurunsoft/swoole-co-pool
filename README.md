@@ -7,6 +7,10 @@
 
 Swoole 协程工作池，它可以限定你的同时工作协程数量，并且减少协程频繁创建销毁的损耗。
 
+宇润PHP全家桶群：17916227 [![点击加群](https://pub.idqqimg.com/wpa/images/group.png "点击加群")](https://jq.qq.com/?_wv=1027&k=5wXf4Zq)，如有问题会有人解答和修复。
+
+程序员日常划水群：74401592 [![点击加群](https://pub.idqqimg.com/wpa/images/group.png "点击加群")](https://shang.qq.com/wpa/qunwpa?idkey=e2e6b49e9a648aae5285b3aba155d59107bb66fde02e229e078bd7359cac8ac3)。
+
 ## 原理
 
 事先定好协程数量和工作队列长度，将所有工作协程事先创建好。
