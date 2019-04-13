@@ -67,7 +67,7 @@ class CoPool
      */
     public function run()
     {
-        if(!$this->taskQueue)
+        if($this->taskQueue)
         {
             $this->taskQueue->close();
         }
@@ -101,11 +101,15 @@ class CoPool
      * 增加任务
      *
      * @param mixed $data
+     * @param callable|null $callback
      * @return void
      */
-    public function addTask($data)
+    public function addTask($data, $callback = null)
     {
-        $this->taskQueue->push($data);
+        $this->taskQueue->push([
+            'data'      =>  $data,
+            'callback'  =>  $callback,
+        ]);
     }
 
     /**
@@ -118,9 +122,13 @@ class CoPool
     {
         $taskObject = new $this->taskClass;
         do {
-            $data = $this->taskQueue->pop();
-            $param = new $this->taskParamClass($index, $data);
-            $taskObject->run($param);
+            $task = $this->taskQueue->pop();
+            $param = new $this->taskParamClass($index, $task['data']);
+            $result = $taskObject->run($param);
+            if($task['callback'])
+            {
+                $task['callback']($param, $result);
+            }
         } while($this->running);
     }
 

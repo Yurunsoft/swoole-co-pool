@@ -15,11 +15,19 @@ go(function(){
         // 定义任务匿名类，当然你也可以定义成普通类，传入完整类名
         new class implements ICoTask
         {
+            /**
+             * 执行任务
+             *
+             * @param ITaskParam $param
+             * @return mixed
+             */
             public function run(ITaskParam $param)
             {
                 usleep(mt_rand(10, 100) * 1000); // 模拟I/O耗时挂起
                 echo $param->getData(), PHP_EOL;
+                return $param->getData(); // 返回的数据会传入结束回调中
             }
+
         }
     );
     // 运行协程池
@@ -32,7 +40,11 @@ go(function(){
         go(function() use($i, $pool, &$count){
             for($j = 0; $j < 100; ++$j)
             {
-                $pool->addTask(++$count); // 我推
+                $pool->addTask(++$count
+                // 结束回调为非必须的
+                , function(ITaskParam $param, $data){
+                    echo 'finish:' . $data, PHP_EOL;
+                }); // 我推
             }
         });
     }

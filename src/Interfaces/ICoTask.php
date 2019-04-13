@@ -6,8 +6,8 @@ interface ICoTask
     /**
      * 执行任务
      *
-     * @param ITaskParam $param
-     * @return void
+     * @param \Yurun\Swoole\CoPool\Interfaces\ITaskParam $param
+     * @return mixed
      */
     public function run(ITaskParam $param);
 
