@@ -1,37 +1,40 @@
-# swoole-co-pool
+# PaySDK
 
-#### 介绍
-Swoole 协程工作池——来自宇润 PHP 全家桶
+[![Latest Version](https://img.shields.io/packagist/v/yurunsoft/swoole-co-pool.svg)](https://packagist.org/packages/yurunsoft/swoole-co-pool)
+[![License](https://img.shields.io/github/license/Yurunsoft/swoole-co-pool.svg)](https://github.com/Yurunsoft/swoole-co-pool/blob/master/LICENSE)
 
-#### 软件架构
-软件架构说明
+## 介绍
 
+Swoole 协程工作池，它可以限定你的同时工作协程数量，并且减少协程频繁创建销毁的损耗。
 
-#### 安装教程
+## 原理
 
-1. xxxx
-2. xxxx
-3. xxxx
+事先定好协程数量和工作队列长度，将所有工作协程事先创建好。
 
-#### 使用说明
+使用 `Swoole\Coroutine\Channel` 实现工作队列。
 
-1. xxxx
-2. xxxx
-3. xxxx
+在每个工作协程中，`Swoole\Coroutine\Channel->pop()`。一旦有新的任务 `push` 进队列，就会有一个工作协程被唤醒。
 
-#### 参与贡献
+## 安装
 
-1. Fork 本仓库
-2. 新建 Feat_xxx 分支
-3. 提交代码
-4. 新建 Pull Request
+在您的composer.json中加入配置：
 
+```json
+{
+    "require": {
+        "yurunsoft/swoole-co-pool": "~1.0"
+    }
+}
+```
 
-#### 码云特技
+然后执行`composer update`命令。
 
-1. 使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2. 码云官方博客 [blog.gitee.com](https://blog.gitee.com)
-3. 你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
-4. [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
-5. 码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6. 码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## 代码示例
+
+详见 `test/test.php`
+
+## 捐赠
+
+<img src="https://raw.githubusercontent.com/Yurunsoft/swoole-co-pool/master/res/pay.png"/>
+
+开源不求盈利，多少都是心意，生活不易，随缘随缘……
