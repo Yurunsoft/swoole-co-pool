@@ -1,0 +1,11 @@
+{
+    "name": "yurunsoft/swoole-co-pool",
+    "require": {
+        
+    },
+    "autoload": {
+        "psr-4": {
+            "Yurun\\Swoole\\CoPool\\": "./src"
+        }
+    }
+}
