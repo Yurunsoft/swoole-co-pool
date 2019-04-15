@@ -40,9 +40,12 @@ go(function(){
         go(function() use($i, $pool, &$count){
             for($j = 0; $j < 100; ++$j)
             {
-                // 增加任务
-                $result = $pool->addTask(++$count);
-                echo 'finish:' . $result, PHP_EOL;
+                // 增加任务，异步回调
+                $pool->addTaskAsync(++$count
+                // 结束回调为非必须的
+                , function(ITaskParam $param, $data){
+                    echo 'finish:' . $data, PHP_EOL;
+                });
             }
         });
     }

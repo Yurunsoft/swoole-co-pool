@@ -25,25 +25,34 @@ class CoPool
     private $taskQueue;
 
     /**
+     * 是否正在运行
+     *
+     * @var boolean
+     */
+    private $running = false;
+
+    /**
      * 任务类
      *
      * @var string
      */
-    private $taskClass;
+    public $taskClass;
 
     /**
      * 任务参数类名
      *
      * @var string
      */
-    private $taskParamClass;
+    public $taskParamClass;
 
     /**
-     * 是否正在运行
+     * 创建协程的函数
+     * 
+     * 有些框架自定义了新建协程的方法，用于控制上下文生命周期，所以加了这个属性用于兼容
      *
-     * @var boolean
+     * @var callable
      */
-    private $running = false;
+    public $createCoCallable = 'go';
 
     /**
      * 构造方法
@@ -98,15 +107,53 @@ class CoPool
     }
 
     /**
-     * 增加任务
+     * 增加任务，并挂起协程等待返回任务执行结果
      *
      * @param mixed $data
-     * @param callable|null $callback
-     * @return void
+     * @return mixed
      */
-    public function addTask($data, $callback = null)
+    public function addTask($data)
     {
-        $this->taskQueue->push([
+        $channel = new \Swoole\Coroutine\Channel(1);
+        try {
+            if($this->taskQueue->push([
+                'data'      =>  $data,
+                'channel'   =>  $channel,
+            ]))
+            {
+                $result = $channel->pop();
+                if(false === $result)
+                {
+                    return false;
+                }
+                else
+                {
+                    return $result['result'];
+                }
+            }
+            else
+            {
+                throw new \RuntimeException(sprintf('AddTask failed! Channel errCode = %s', $this->taskQueue->errCode));
+            }
+        } catch(\Throwable $th) {
+            throw $th;
+        } finally {
+            $channel->close();
+        }
+    }
+
+    /**
+     * 增加任务，异步回调
+     * 
+     * 执行完成后新建一个协程调用 $callback，为 null 不执行回调
+     *
+     * @param mixed $data
+     * @param callable $callback
+     * @return boolean
+     */
+    public function addTaskAsync($data, $callback = null)
+    {
+        return $this->taskQueue->push([
             'data'      =>  $data,
             'callback'  =>  $callback,
         ]);
@@ -123,11 +170,28 @@ class CoPool
         $taskObject = new $this->taskClass;
         do {
             $task = $this->taskQueue->pop();
-            $param = new $this->taskParamClass($index, $task['data']);
-            $result = $taskObject->run($param);
-            if($task['callback'])
+            if(false !== $task)
             {
-                $task['callback']($param, $result);
+                try {
+                    $param = new $this->taskParamClass($index, $task['data']);
+                    $result = $taskObject->run($param);
+                } catch(\Throwable $th) {
+                    throw $th;
+                } finally {
+                    if(isset($task['channel']))
+                    {
+                        $task['channel']->push([
+                            'param'     =>  $param,
+                            'result'    =>  $result,
+                        ]);
+                    }
+                    else if(isset($task['callback']))
+                    {
+                        ($this->createCoCallable)(function() use($task, $param, $result){
+                            $task['callback']($param, $result);
+                        });
+                    }
+                }
             }
         } while($this->running);
     }
