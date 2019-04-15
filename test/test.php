@@ -25,7 +25,7 @@ go(function(){
             {
                 usleep(mt_rand(10, 100) * 1000); // 模拟I/O耗时挂起
                 echo $param->getData(), PHP_EOL;
-                return $param->getData(); // 返回的数据会传入结束回调中
+                return $param->getData(); // 返回任务执行结果，非必须
             }
 
         }

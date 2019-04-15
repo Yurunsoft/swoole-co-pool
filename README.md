@@ -33,6 +33,45 @@ Swoole 协程工作池，它可以限定你的同时工作协程数量，并且�
 
 然后执行`composer update`命令。
 
+## 使用
+
+```php
+use Yurun\Swoole\CoPool\CoPool;
+use Yurun\Swoole\CoPool\Interfaces\ICoTask;
+use Yurun\Swoole\CoPool\Interfaces\ITaskParam;
+
+$coCount = 10; // 同时工作协程数
+$queueLength = 1024; // 队列长度
+$pool = new CoPool($coCount, $queueLength,
+    // 定义任务匿名类，当然你也可以定义成普通类，传入完整类名
+    new class implements ICoTask
+    {
+        /**
+         * 执行任务
+         *
+         * @param ITaskParam $param
+         * @return mixed
+         */
+        public function run(ITaskParam $param)
+        {
+            // 执行任务
+            return true; // 返回任务执行结果，非必须
+        }
+
+    }
+);
+
+$data = 1; // 可以传递任何参数
+
+// 增加任务，并挂起协程等待返回任务执行结果
+$result = $pool->addTask($data);
+
+// 增加任务，异步回调
+$result = $pool->addTask($data, function(ITaskParam $param, $data){
+    // 异步回调
+});
+```
+
 ## 代码示例
 
 详见 `test/test.php`
