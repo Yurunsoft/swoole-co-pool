@@ -60,6 +60,7 @@ $pool = new CoPool($coCount, $queueLength,
 
     }
 );
+$pool->run();
 
 $data = 1; // 可以传递任何参数
 
@@ -67,7 +68,7 @@ $data = 1; // 可以传递任何参数
 $result = $pool->addTask($data);
 
 // 增加任务，异步回调
-$result = $pool->addTask($data, function(ITaskParam $param, $data){
+$result = $pool->addTaskAsync($data, function(ITaskParam $param, $data){
     // 异步回调
 });
 ```

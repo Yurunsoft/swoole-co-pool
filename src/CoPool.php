@@ -101,9 +101,9 @@ class CoPool
      */
     public function stop()
     {
+        $this->running = false;
         $this->taskQueue->close();
         $this->taskQueue = null;
-        $this->running = false;
     }
 
     /**
