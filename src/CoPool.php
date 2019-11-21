@@ -65,6 +65,7 @@ class CoPool
     public function __construct($coCount, $queueLength, $taskClass, $taskParamClass = TaskParam::class)
     {
         $this->coCount = $coCount;
+        $this->queueLength = $queueLength;
         $this->taskClass = $taskClass;
         $this->taskParamClass = $taskParamClass;
     }
