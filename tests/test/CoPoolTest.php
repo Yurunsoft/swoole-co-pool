@@ -1,20 +1,18 @@
 <?php
-namespace Imi\Grpc\Test;
+namespace Yurun\Swoole\CoPool\Test;
 
-use PHPUnit\Framework\TestCase;
 use Yurun\Swoole\CoPool\CoPool;
 use Yurun\Swoole\CoPool\Interfaces\ICoTask;
 use Yurun\Swoole\CoPool\Interfaces\ITaskParam;
-use Swoole\Event;
 use Swoole\Coroutine;
 
-class CoPoolTest extends TestCase
+class CoPoolTest extends BaseTest
 {
     public function testTask()
     {
         $results = [];
-        go(function() use(&$results){
-            $coCount = 10; // 同时工作协程数，可以改小改大，看一下执行速度
+        $this->go(function() use(&$results){
+            $coCount = 5; // 同时工作协程数，可以改小改大，看一下执行速度
             $queueLength = 1024; // 队列长度
             $pool = new CoPool($coCount, $queueLength,
                 // 定义任务匿名类，当然你也可以定义成普通类，传入完整类名
@@ -38,19 +36,27 @@ class CoPoolTest extends TestCase
             $pool->run();
 
             // 开始往协程池里推任务
+            $count = 0;
             for($i = 1; $i <= 10; ++$i)
             {
-                go(function() use($i, $pool, &$results){
+                go(function() use($i, $pool, &$results, &$count){
                     for($j = 1; $j <= 10; ++$j)
                     {
                         // 增加任务
                         $result = $pool->addTask($i * $j);
                         $results[$i][$j] = $result;
+                        ++$count;
                     }
                 });
             }
+
+            while($count < 100)
+            {
+                Coroutine::sleep(0.01);
+            }
+
+            $pool->stop();
         });
-        Event::wait();
         $expected = [];
         for($i = 1; $i <= 10; ++$i)
         {
@@ -65,7 +71,7 @@ class CoPoolTest extends TestCase
     public function testTaskAsync()
     {
         $results = [];
-        go(function() use(&$results){
+        $this->go(function() use(&$results){
             $coCount = 10; // 同时工作协程数，可以改小改大，看一下执行速度
             $queueLength = 1024; // 队列长度
             $pool = new CoPool($coCount, $queueLength,
@@ -89,23 +95,28 @@ class CoPoolTest extends TestCase
             // 运行协程池
             $pool->run();
         
+            $count = 0;
             // 开始往协程池里推任务
             for($i = 1; $i <= 10; ++$i)
             {
-                go(function() use($i, $pool, &$results){
+                go(function() use($i, $pool, &$results, &$count){
                     for($j = 1; $j <= 10; ++$j)
                     {
                         // 增加任务，异步回调
                         $pool->addTaskAsync($i * $j
                         // 结束回调为非必须的
-                        , function(ITaskParam $param, $result) use($i, $j, &$results){
+                        , function(ITaskParam $param, $result) use($i, $j, &$results, &$count){
                             $results[$i][$j] = $result;
+                            ++$count;
                         });
                     }
                 });
             }
+            while($count < 100)
+            {
+                Coroutine::sleep(0.01);
+            }
         });
-        Event::wait();
         $expected = [];
         for($i = 1; $i <= 10; ++$i)
         {

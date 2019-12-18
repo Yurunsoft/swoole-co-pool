@@ -12,6 +12,11 @@
             "Yurun\\Swoole\\CoPool\\": "./src"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Yurun\\Swoole\\CoPool\\Test\\": "./tests/test"
+        }
+    },
     "scripts": {
         "test": "./tests/run"
     }

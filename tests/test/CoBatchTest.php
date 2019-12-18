@@ -1,15 +1,13 @@
 <?php
-namespace Imi\Grpc\Test;
+namespace Yurun\Swoole\CoPool\Test;
 
-use Swoole\Event;
-use PHPUnit\Framework\TestCase;
 use Yurun\Swoole\CoPool\CoBatch;
 
-class CoBatchTest extends TestCase
+class CoBatchTest extends BaseTest
 {
     public function testBatch()
     {
-        go(function(){
+        $this->go(function(){
             $batch = new CoBatch([
                 function(){
                     return 'imi';
@@ -28,7 +26,6 @@ class CoBatchTest extends TestCase
                 'b' =>  'bi',
             ], $results);
         });
-        Event::wait();
     }
 
 }
