@@ -179,6 +179,10 @@ class CoPool
                 } catch(\Throwable $th) {
                     throw $th;
                 } finally {
+                    if(!isset($result))
+                    {
+                        $result = null;
+                    }
                     if(isset($task['channel']))
                     {
                         $task['channel']->push([
