@@ -35,10 +35,10 @@ go(function(){
 
     // 开始往协程池里推任务
     $count = 0;
-    for($i = 1; $i <= 100; ++$i)
+    for($i = 1; $i <= 10; ++$i)
     {
         go(function() use($i, $pool, &$count){
-            for($j = 0; $j < 100; ++$j)
+            for($j = 0; $j < 10; ++$j)
             {
                 // 增加任务，异步回调
                 $pool->addTaskAsync(++$count
