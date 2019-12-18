@@ -201,4 +201,24 @@ class CoPool
         } while($this->running);
     }
 
+    /**
+     * 检测是否正在运行
+     *
+     * @return boolean
+     */ 
+    public function isRunning()
+    {
+        return $this->running;
+    }
+
+    /**
+     * 获取队列中待执行任务长度
+     *
+     * @return int
+     */
+    public function getQueueLength()
+    {
+        return $this->taskQueue->length();
+    }
+
 }
