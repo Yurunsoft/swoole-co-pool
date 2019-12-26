@@ -127,7 +127,7 @@ class CoBatchTest extends BaseTest
             $limit = 2;
             $time = microtime(true);
             $results = $batch->exec($timeout, $limit);
-            $useTime = round(microtime(true) - $time, 3);
+            $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
             $this->assertEquals([
@@ -164,7 +164,7 @@ class CoBatchTest extends BaseTest
                     return 'e';
                 },
             ], $timeout, $limit);
-            $useTime = round(microtime(true) - $time, 3);
+            $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
             $this->assertEquals([
