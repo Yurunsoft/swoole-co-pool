@@ -23,9 +23,10 @@ class CoBatch
     /**
      * 执行并获取执行结果
      *
+     * @param float|null $timeout 超时时间，为 null 则不限时
      * @return array
      */
-    public function exec()
+    public function exec(?float $timeout = null)
     {
         $channel = new Channel(1);
         $taskCount = count($this->taskCallables);
@@ -41,12 +42,23 @@ class CoBatch
                 ]);
             });
         }
+        $leftTimeout = $timeout;
         while($count < $taskCount)
         {
-            $result = $channel->pop();
+            $beginTime = microtime(true);
+            $result = $channel->pop($leftTimeout);
+            $endTime = microtime(true);
             if(false === $result)
             {
-                break;
+                break; // 超时
+            }
+            if(null !== $leftTimeout)
+            {
+                $leftTimeout -= ($endTime - $beginTime);
+                if($leftTimeout <= 0)
+                {
+                    break; // 剩余超时时间不足
+                }
             }
             ++$count;
             $results[$result['key']] = $result['result'];
