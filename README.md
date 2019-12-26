@@ -92,6 +92,9 @@ $batch = new CoBatch([
     },
 ]);
 $results = $batch->exec();
+// $timeout = -1; // 支持超时
+// $limit = -1; // 限制同时工作协程数量
+// $results = $batch->exec($timeout, $limit);
 var_dump($results);
 // $results 值为:
 // [
@@ -99,6 +102,24 @@ var_dump($results);
 //     'a' =>  'niu',
 //     'b' =>  'bi',
 // ]
+```
+
+快捷函数：
+
+```php
+use function Yurun\Swoole\Coroutine\batch;
+batch([
+    function(){
+        return 'imi';
+    },
+    'a' =>  function(){
+        return 'niu';
+    },
+    'b' =>  function(){
+        return 'bi';
+    },
+]);
+// batch($callables, $timeout, $limit);
 ```
 
 ## 代码示例
