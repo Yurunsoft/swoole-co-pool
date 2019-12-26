@@ -98,4 +98,83 @@ class CoBatchTest extends BaseTest
         });
     }
 
+    public function testBatchLimit()
+    {
+        $this->go(function(){
+            $batch = new CoBatch([
+                function(){
+                    Coroutine::sleep(1);
+                    return 'a';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'b';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'c';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'd';
+                },
+                'test'  =>  function(){
+                    Coroutine::sleep(1);
+                    return 'e';
+                },
+            ]);
+            $timeout = -1;
+            $limit = 2;
+            $time = microtime(true);
+            $results = $batch->exec($timeout, $limit);
+            $useTime = microtime(true) - $time;
+            $this->assertGreaterThan(3, $useTime);
+            $this->assertLessThan(4, $useTime);
+            $this->assertEquals([
+                'a',
+                'b',
+                'c',
+                'd',
+                'test' =>  'e',
+            ], $results);
+        });
+        $this->go(function(){
+            $timeout = -1;
+            $limit = 2;
+            $time = microtime(true);
+            $results = batch([
+                function(){
+                    Coroutine::sleep(1);
+                    return 'a';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'b';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'c';
+                },
+                function(){
+                    Coroutine::sleep(1);
+                    return 'd';
+                },
+                'test'  =>  function(){
+                    Coroutine::sleep(1);
+                    return 'e';
+                },
+            ], $timeout, $limit);
+            $useTime = microtime(true) - $time;
+            $this->assertGreaterThan(3, $useTime);
+            $this->assertLessThan(4, $useTime);
+            $this->assertEquals([
+                'a',
+                'b',
+                'c',
+                'd',
+                'test' =>  'e',
+            ], $results);
+        });
+    }
+
 }
