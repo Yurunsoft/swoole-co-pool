@@ -10,7 +10,10 @@
     "autoload": {
         "psr-4": {
             "Yurun\\Swoole\\CoPool\\": "./src"
-        }
+        },
+        "files": [
+            "./src/function.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
