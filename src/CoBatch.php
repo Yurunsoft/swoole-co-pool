@@ -1,6 +1,7 @@
 <?php
 namespace Yurun\Swoole\CoPool;
 
+use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 
 /**
@@ -37,33 +38,26 @@ class CoBatch
     }
 
     /**
-     * 执行并获取执行结果
-     *
+     * 协程批量执行，并获取执行结果
+     * 
+     * @param array $taskCallables 任务回调列表
      * @param float|null $timeout 超时时间，为 -1 则不限时
      * @param int|null $limit 限制并发协程数量，为 -1 则不限制
      * @return array
      */
-    public function exec(?float $timeout = null, ?int $limit = null): array
+    public static function __exec(array $taskCallables, ?float $timeout = -1, ?int $limit = -1): array
     {
-        if(null === $timeout)
-        {
-            $timeout = $this->timeout ?? -1;
-        }
-        if(null === $limit)
-        {
-            $limit = $this->limit ?? -1;
-        }
         $channel = new Channel(1);
-        $taskCount = count($this->taskCallables);
+        $taskCount = count($taskCallables);
         $count = 0;
         $results = [];
         $running = true;
         if(-1 === $limit)
         {
-            foreach($this->taskCallables as $key => $callable)
+            foreach($taskCallables as $key => $callable)
             {
                 $results[$key] = null;
-                go(function() use($key, $callable, $channel){
+                Coroutine::create(function() use($key, $callable, $channel){
                     $channel->push([
                         'key'       =>  $key,
                         'result'    =>  $callable(),
@@ -73,18 +67,18 @@ class CoBatch
         }
         else
         {
-            foreach($this->taskCallables as $key => $callable)
+            foreach($taskCallables as $key => $callable)
             {
                 $results[$key] = null;
             }
-            reset($this->taskCallables);
+            reset($taskCallables);
             for($i = 0; $i < $limit; ++$i)
             {
-                go(function() use($channel, &$running){
-                    while($running && $callable = current($this->taskCallables))
+                Coroutine::create(function() use($channel, &$running, &$taskCallables){
+                    while($running && $callable = current($taskCallables))
                     {
-                        $key = key($this->taskCallables);
-                        next($this->taskCallables);
+                        $key = key($taskCallables);
+                        next($taskCallables);
                         $channel->push([
                             'key'       =>  $key,
                             'result'    =>  $callable(),
@@ -116,6 +110,26 @@ class CoBatch
         }
         $running = false;
         return $results;
+    }
+
+    /**
+     * 执行并获取执行结果
+     *
+     * @param float|null $timeout 超时时间，为 -1 则不限时
+     * @param int|null $limit 限制并发协程数量，为 -1 则不限制
+     * @return array
+     */
+    public function exec(?float $timeout = null, ?int $limit = null): array
+    {
+        if(null === $timeout)
+        {
+            $timeout = $this->timeout ?? -1;
+        }
+        if(null === $limit)
+        {
+            $limit = $this->limit ?? -1;
+        }
+        return static::__exec($this->taskCallables, $timeout, $limit);
     }
 
 }

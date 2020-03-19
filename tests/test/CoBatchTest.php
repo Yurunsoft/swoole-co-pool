@@ -5,6 +5,7 @@ use Yurun\Swoole\CoPool\CoBatch;
 use Swoole\Coroutine;
 
 use function Yurun\Swoole\Coroutine\batch;
+use function Yurun\Swoole\Coroutine\goWait;
 
 class CoBatchTest extends BaseTest
 {
@@ -177,4 +178,14 @@ class CoBatchTest extends BaseTest
         });
     }
 
+    public function testGoWait()
+    {
+        $this->go(function(){
+            $result = goWait(function(){
+                Coroutine::sleep(1);
+                return 'wait result';
+            });
+            $this->assertEquals('wait result', $result);
+        });
+    }
 }

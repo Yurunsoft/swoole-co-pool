@@ -13,6 +13,16 @@ use Yurun\Swoole\CoPool\CoBatch;
  */
 function batch(array $taskCallables, ?float $timeout = -1, ?int $limit = -1): array
 {
-    $coBatch = new CoBatch($taskCallables);
-    return $coBatch->exec($timeout, $limit);
+    return CoBatch::__exec($taskCallables, $timeout, $limit);
+}
+
+/**
+ * 创建一个协程A，挂起当前协程等待A协程执行完毕，并返回A协程的返回值
+ * 
+ * @param callable $callable 任务回调列表
+ * @param float|null $timeout 超时时间，为 -1 则不限时
+ */
+function goWait(callable $callable, ?float $timeout = -1)
+{
+    return CoBatch::__exec([$callable], $timeout)[0] ?? null;
 }

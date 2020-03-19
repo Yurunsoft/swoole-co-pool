@@ -1,6 +1,8 @@
 <?php
 namespace Yurun\Swoole\CoPool;
 
+use Swoole\Coroutine;
+
 class CoPool
 {
     /**
@@ -85,7 +87,7 @@ class CoPool
         $this->running = true;
         for($i = 0; $i < $this->coCount; ++$i)
         {
-            go(function() use($i){
+            Coroutine::create(function() use($i){
                 $this->task($i);
             });
         }
