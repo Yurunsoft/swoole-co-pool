@@ -26,7 +26,7 @@
 ```json
 {
     "require": {
-        "yurunsoft/swoole-co-pool": "^1.1.0"
+        "yurunsoft/swoole-co-pool": "^1.2.0"
     }
 }
 ```
@@ -75,7 +75,7 @@ $result = $pool->addTaskAsync($data, function(ITaskParam $param, $data){
 });
 ```
 
-### 协程批量执行器
+### 批量执行协程
 
 每个方法都在单独的协程中被执行，然后可以统一获取到结果。
 
@@ -120,6 +120,17 @@ batch([
     },
 ]);
 // batch($callables, $timeout, $limit);
+```
+
+### 执行单个协程并等待返回值
+
+```php
+use function Yurun\Swoole\Coroutine\goWait;
+$result = goWait(function(){
+    \Swoole\Coroutine::sleep(1);
+    return 'wait result';
+});
+echo $result; // wait result
 ```
 
 ## 代码示例
