@@ -26,7 +26,7 @@
 ```json
 {
     "require": {
-        "yurunsoft/swoole-co-pool": "^1.2.0"
+        "yurunsoft/swoole-co-pool": "^1.3.0"
     }
 }
 ```
@@ -133,9 +133,32 @@ $result = goWait(function(){
 echo $result; // wait result
 ```
 
+### 通道容器
+
+```php
+use Yurun\Swoole\CoPool\ChannelContainer;
+
+go(function(){
+    $channelContainer = new ChannelContainer;
+
+    $id = 'abc';
+    $data = [
+        'time'  =>  time(),
+    ];
+
+    go(function() use($id, $data, $channelContainer){
+        echo 'Wait 3 seconds...', PHP_EOL;
+        \Swoole\Coroutine::sleep(3);
+        $channelContainer->push($id, $data);
+    });
+    var_dump($channelContainer->pop($id));
+
+});
+```
+
 ## 代码示例
 
-详见 `test/test.php`
+详见 `example` 目录
 
 ## 捐赠
 
