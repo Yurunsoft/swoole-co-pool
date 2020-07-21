@@ -2,6 +2,7 @@
 namespace Yurun\Swoole\CoPool;
 
 use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 
 class CoPool
 {
@@ -57,6 +58,13 @@ class CoPool
     public $createCoCallable = 'go';
 
     /**
+     * 等待的通道
+     *
+     * @var \Swoole\Coroutine\Channel
+     */
+    private $waitChannel;
+
+    /**
      * 构造方法
      *
      * @param int $coCount 工作协程数量
@@ -83,7 +91,8 @@ class CoPool
         {
             $this->taskQueue->close();
         }
-        $this->taskQueue = new \Swoole\Coroutine\Channel($this->queueLength);
+        $this->taskQueue = new Channel($this->queueLength);
+        $this->waitChannel = new Channel(1);
         $this->running = true;
         for($i = 0; $i < $this->coCount; ++$i)
         {
@@ -107,6 +116,18 @@ class CoPool
         $this->running = false;
         $this->taskQueue->close();
         $this->taskQueue = null;
+        $this->waitChannel->push(1);
+    }
+
+    /**
+     * 等待协程池停止
+     *
+     * @param float $timeout
+     * @return boolean
+     */
+    public function wait(float $timeout = -1): bool
+    {
+        return !!$this->waitChannel->pop($timeout);
     }
 
     /**
@@ -117,7 +138,7 @@ class CoPool
      */
     public function addTask($data)
     {
-        $channel = new \Swoole\Coroutine\Channel(1);
+        $channel = new Channel(1);
         try {
             if($this->taskQueue->push([
                 'data'      =>  $data,

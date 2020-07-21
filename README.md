@@ -73,6 +73,9 @@ $result = $pool->addTask($data);
 $result = $pool->addTaskAsync($data, function(ITaskParam $param, $data){
     // 异步回调
 });
+
+$pool->wait(); // 等待协程池停止，不限时，true/false
+$pool->wait(60); // 等待协程池停止，限时60秒，如果为-1则不限时，true/false
 ```
 
 ### 批量执行协程
