@@ -116,6 +116,7 @@ class CoPoolTest extends BaseTest
             {
                 Coroutine::sleep(0.01);
             }
+            $pool->stop();
         });
         $expected = [];
         for($i = 1; $i <= 10; ++$i)

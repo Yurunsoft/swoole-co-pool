@@ -4,6 +4,22 @@ language: php
 matrix:
   include:
   - php: '7.1'
+    env: SWOOLE_VERSION="v4.5.2"
+  - php: '7.2'
+    env: SWOOLE_VERSION="v4.5.2"
+  - php: '7.3'
+    env: SWOOLE_VERSION="v4.5.2"
+  - php: '7.4'
+    env: SWOOLE_VERSION="v4.5.2"
+  - php: '7.1'
+    env: SWOOLE_VERSION="v4.4.19"
+  - php: '7.2'
+    env: SWOOLE_VERSION="v4.4.19"
+  - php: '7.3'
+    env: SWOOLE_VERSION="v4.4.19"
+  - php: '7.4'
+    env: SWOOLE_VERSION="v4.4.19"
+  - php: '7.1'
     env: SWOOLE_VERSION="v4.3.6"
   - php: '7.2'
     env: SWOOLE_VERSION="v4.3.6"
@@ -19,37 +35,17 @@ matrix:
     env: SWOOLE_VERSION="master"
   - php: 'nightly'
     env: SWOOLE_VERSION="master" DISABLE_XDEBUG=false INSTALL_REDIS_EXT=true
-  - php: '7.1'
-    env: SWOOLE_VERSION="v4.4.17"
-  - php: '7.2'
-    env: SWOOLE_VERSION="v4.4.17"
-  - php: '7.3'
-    env: SWOOLE_VERSION="v4.4.17"
-  - php: '7.4'
-    env: SWOOLE_VERSION="v4.4.17"
-  - php: '7.1'
-    env: SWOOLE_VERSION="v4.5.0RC1"
-  - php: '7.2'
-    env: SWOOLE_VERSION="v4.5.0RC1"
-  - php: '7.3'
-    env: SWOOLE_VERSION="v4.5.0RC1"
-  - php: '7.4'
-    env: SWOOLE_VERSION="v4.5.0RC1"
   allow_failures:
   - env: SWOOLE_VERSION="master"
-  - env: SWOOLE_VERSION="v4.5.0RC1"
   - php: nightly
 
 install:
-  - wget https://github.com/swoole/swoole-src/archive/$SWOOLE_VERSION.tar.gz -O swoole.tar.gz && mkdir -p swoole && tar -xf swoole.tar.gz -C swoole --strip-components=1 && rm swoole.tar.gz && cd swoole && phpize && ./configure --enable-openssl --enable-http2 && make -j && make install && cd -
-  - echo "extension = swoole.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - wget https://github.com/swoole/swoole-src/archive/$SWOOLE_VERSION.tar.gz -O swoole.tar.gz && mkdir -p swoole && tar -xf swoole.tar.gz -C swoole --strip-components=1 && rm swoole.tar.gz && cd swoole && phpize && ./configure --enable-openssl --enable-http2 && make -j && make install && cd - && echo "extension = swoole.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 before_script:
   - if [[ $DISABLE_XDEBUG != false ]]; then
       phpenv config-rm xdebug.ini;
     fi
-  - curl -sSfL -o ~/.phpenv/versions/$(phpenv version-name)/bin/phpunit https://phar.phpunit.de/phpunit-7.phar
-  - export TEST_PHPUNIT_PATH=~/.phpenv/versions/$(phpenv version-name)/bin/phpunit
   - composer update
   - php --ri swoole
 
