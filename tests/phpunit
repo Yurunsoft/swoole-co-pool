@@ -83,10 +83,6 @@ Swoole\Coroutine::create(function () use (&$code) {
             throw $e;
         }
     }
-    finally
-    {
-        Timer::clearAll();
-    }
 });
 Swoole\Event::wait();
 exit($code);
