@@ -24,6 +24,6 @@
         }
     },
     "scripts": {
-        "test": "./tests/run"
+        "test": "./tests/phpunit -c ./tests/phpunit.xml"
     }
 }

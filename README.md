@@ -74,6 +74,14 @@ $result = $pool->addTaskAsync($data, function(ITaskParam $param, $data){
     // 异步回调
 });
 
+// 增加分组任务，并挂起协程等待返回任务执行结果
+$result = $pool->addTask($data, '分组名称');
+
+// 增加分组任务，异步回调
+$result = $pool->addTaskAsync($data, function(ITaskParam $param, $data){
+    // 异步回调
+}, '分组名称');
+
 $pool->wait(); // 等待协程池停止，不限时，true/false
 $pool->wait(60); // 等待协程池停止，限时60秒，如果为-1则不限时，true/false
 ```

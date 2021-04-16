@@ -182,4 +182,49 @@ class CoPoolTest extends BaseTest
         }
         $this->assertEquals($expected, $results);
     }
+
+    public function testGroup()
+    {
+        $count = 0;
+        $result = [];
+        $this->go(function () use (&$count, &$result) {
+            $coCount = 10; // 同时工作协程数，可以改小改大，看一下执行速度
+            $queueLength = 1024; // 队列长度
+            $pool = new CoPool($coCount, $queueLength,
+                // 定义任务匿名类，当然你也可以定义成普通类，传入完整类名
+                new class() implements ICoTask {
+                    /**
+                     * 执行任务
+                     *
+                     * @return mixed
+                     */
+                    public function run(ITaskParam $param)
+                    {
+                        Coroutine::sleep(mt_rand(1, 10) / 1000);
+
+                        return $param->getData(); // 返回任务执行结果，非必须
+                    }
+                }
+            );
+            // 运行协程池
+            $pool->run();
+
+            // 开始往协程池里推任务
+            for ($i = 1; $i <= 100; ++$i)
+            {
+                // 增加任务，异步回调
+                $pool->addTaskAsync(null
+                // 结束回调为非必须的
+                , function () use (&$count, &$result) {
+                    $result[] = ++$count;
+                }, 'group1');
+            }
+            while ($count < 100)
+            {
+                Coroutine::sleep(0.01);
+            }
+            $pool->stop();
+        });
+        $this->assertEquals(range(1, 100), $result);
+    }
 }

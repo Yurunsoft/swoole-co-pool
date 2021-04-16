@@ -66,6 +66,20 @@ class CoPool
     private $waitChannel;
 
     /**
+     * 分组通道列表.
+     *
+     * @var \Swoole\Coroutine\Channel[]
+     */
+    private $groupChannels = [];
+
+    /**
+     * 分组工作状态
+     *
+     * @var array
+     */
+    private $groupWorkingStatus = [];
+
+    /**
      * 构造方法.
      *
      * @param int    $coCount        工作协程数量
@@ -132,10 +146,11 @@ class CoPool
      * 增加任务，并挂起协程等待返回任务执行结果.
      *
      * @param mixed $data
+     * @param mixed $group
      *
      * @return mixed
      */
-    public function addTask($data)
+    public function addTask($data, $group = null)
     {
         $channel = new Channel(1);
         try
@@ -143,6 +158,7 @@ class CoPool
             if ($this->taskQueue->push([
                 'data'      =>  $data,
                 'channel'   =>  $channel,
+                'group' => $group,
             ]))
             {
                 $result = $channel->pop();
@@ -177,14 +193,16 @@ class CoPool
      *
      * @param mixed    $data
      * @param callable $callback
+     * @param mixed    $group
      *
      * @return bool
      */
-    public function addTaskAsync($data, $callback = null)
+    public function addTaskAsync($data, $callback = null, $group = null)
     {
         return $this->taskQueue->push([
             'data'      => $data,
             'callback'  => $callback,
+            'group'     => $group,
         ]);
     }
 
@@ -203,6 +221,23 @@ class CoPool
             $task = $this->taskQueue->pop();
             if (false !== $task)
             {
+                if ($group = ($task['group'] ?? null))
+                {
+                    if ($this->groupWorkingStatus[$group] ?? false)
+                    {
+                        if (isset($this->groupChannels[$group]))
+                        {
+                            $groupChannel = $this->groupChannels[$group];
+                        }
+                        else
+                        {
+                            $groupChannel = $this->groupChannels[$group] = new Channel($this->queueLength);
+                        }
+                        $groupChannel->push($task);
+                        continue;
+                    }
+                    $this->groupWorkingStatus[$group] = true;
+                }
                 try
                 {
                     $param = new $this->taskParamClass($index, $task['data']);
@@ -214,6 +249,24 @@ class CoPool
                 }
                 finally
                 {
+                    if ($group)
+                    {
+                        $this->groupWorkingStatus[$group] = false;
+                        if (isset($this->groupChannels[$group]))
+                        {
+                            $groupChannel = $this->groupChannels[$group];
+                            $tmpTask = $groupChannel->pop(0.001);
+                            if (false !== $tmpTask)
+                            {
+                                $this->taskQueue->push($tmpTask);
+                            }
+                            if ($groupChannel->isEmpty())
+                            {
+                                unset($this->groupChannels[$group]);
+                            }
+                            unset($this->groupWorkingStatus[$group]);
+                        }
+                    }
                     if (!isset($result))
                     {
                         $result = null;
