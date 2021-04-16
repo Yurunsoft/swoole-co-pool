@@ -1,4 +1,5 @@
 <?php
+
 namespace Yurun\Swoole\CoPool;
 
 use Swoole\Coroutine;
@@ -7,50 +8,50 @@ use Swoole\Coroutine\Channel;
 class CoPool
 {
     /**
-     * 工作协程数量
+     * 工作协程数量.
      *
      * @var int
      */
     private $coCount;
 
     /**
-     * 队列最大长度
+     * 队列最大长度.
      *
      * @var int
      */
     private $queueLength;
 
     /**
-     * 任务队列
+     * 任务队列.
      *
      * @var \Swoole\Coroutine\Channel
      */
     private $taskQueue;
 
     /**
-     * 是否正在运行
+     * 是否正在运行.
      *
-     * @var boolean
+     * @var bool
      */
     private $running = false;
 
     /**
-     * 任务类
+     * 任务类.
      *
      * @var string
      */
     public $taskClass;
 
     /**
-     * 任务参数类名
+     * 任务参数类名.
      *
      * @var string
      */
     public $taskParamClass;
 
     /**
-     * 创建协程的函数
-     * 
+     * 创建协程的函数.
+     *
      * 有些框架自定义了新建协程的方法，用于控制上下文生命周期，所以加了这个属性用于兼容
      *
      * @var callable
@@ -58,18 +59,18 @@ class CoPool
     public $createCoCallable = 'go';
 
     /**
-     * 等待的通道
+     * 等待的通道.
      *
      * @var \Swoole\Coroutine\Channel
      */
     private $waitChannel;
 
     /**
-     * 构造方法
+     * 构造方法.
      *
-     * @param int $coCount 工作协程数量
-     * @param int $queueLength 队列最大长度
-     * @param string $taskClass 任务类
+     * @param int    $coCount        工作协程数量
+     * @param int    $queueLength    队列最大长度
+     * @param string $taskClass      任务类
      * @param string $taskParamClass 任务参数类名
      */
     public function __construct($coCount, $queueLength, $taskClass, $taskParamClass = TaskParam::class)
@@ -81,32 +82,32 @@ class CoPool
     }
 
     /**
-     * 运行协程池
+     * 运行协程池.
      *
      * @return void
      */
     public function run()
     {
-        if($this->taskQueue)
+        if ($this->taskQueue)
         {
             $this->taskQueue->close();
         }
         $this->taskQueue = new Channel($this->queueLength);
         $this->waitChannel = new Channel(1);
         $this->running = true;
-        for($i = 0; $i < $this->coCount; ++$i)
+        for ($i = 0; $i < $this->coCount; ++$i)
         {
-            Coroutine::create(function() use($i){
+            Coroutine::create(function () use ($i) {
                 $this->task($i);
             });
         }
     }
 
     /**
-     * 停止协程池
-     * 
+     * 停止协程池.
+     *
      * 不会中断正在执行的任务
-     * 
+     *
      * 等待当前任务全部执行完后，才算全部停止
      *
      * @return void
@@ -120,33 +121,32 @@ class CoPool
     }
 
     /**
-     * 等待协程池停止
-     *
-     * @param float $timeout
-     * @return boolean
+     * 等待协程池停止.
      */
     public function wait(float $timeout = -1): bool
     {
-        return !!$this->waitChannel->pop($timeout);
+        return (bool) $this->waitChannel->pop($timeout);
     }
 
     /**
-     * 增加任务，并挂起协程等待返回任务执行结果
+     * 增加任务，并挂起协程等待返回任务执行结果.
      *
      * @param mixed $data
+     *
      * @return mixed
      */
     public function addTask($data)
     {
         $channel = new Channel(1);
-        try {
-            if($this->taskQueue->push([
+        try
+        {
+            if ($this->taskQueue->push([
                 'data'      =>  $data,
                 'channel'   =>  $channel,
             ]))
             {
                 $result = $channel->pop();
-                if(false === $result)
+                if (false === $result)
                 {
                     return false;
                 }
@@ -159,83 +159,95 @@ class CoPool
             {
                 throw new \RuntimeException(sprintf('AddTask failed! Channel errCode = %s', $this->taskQueue->errCode));
             }
-        } catch(\Throwable $th) {
+        }
+        catch (\Throwable $th)
+        {
             throw $th;
-        } finally {
+        }
+        finally
+        {
             $channel->close();
         }
     }
 
     /**
-     * 增加任务，异步回调
-     * 
+     * 增加任务，异步回调.
+     *
      * 执行完成后新建一个协程调用 $callback，为 null 不执行回调
      *
-     * @param mixed $data
+     * @param mixed    $data
      * @param callable $callback
-     * @return boolean
+     *
+     * @return bool
      */
     public function addTaskAsync($data, $callback = null)
     {
         return $this->taskQueue->push([
-            'data'      =>  $data,
-            'callback'  =>  $callback,
+            'data'      => $data,
+            'callback'  => $callback,
         ]);
     }
 
     /**
-     * 任务监听
+     * 任务监听.
      *
      * @param int $index
+     *
      * @return void
      */
     protected function task($index)
     {
-        $taskObject = new $this->taskClass;
-        do {
+        $taskObject = new $this->taskClass();
+        do
+        {
             $task = $this->taskQueue->pop();
-            if(false !== $task)
+            if (false !== $task)
             {
-                try {
+                try
+                {
                     $param = new $this->taskParamClass($index, $task['data']);
                     $result = $taskObject->run($param);
-                } catch(\Throwable $th) {
+                }
+                catch (\Throwable $th)
+                {
                     throw $th;
-                } finally {
-                    if(!isset($result))
+                }
+                finally
+                {
+                    if (!isset($result))
                     {
                         $result = null;
                     }
-                    if(isset($task['channel']))
+                    if (isset($task['channel']))
                     {
                         $task['channel']->push([
-                            'param'     =>  $param,
-                            'result'    =>  $result,
+                            'param'     => $param,
+                            'result'    => $result,
                         ]);
                     }
-                    else if(isset($task['callback']))
+                    elseif (isset($task['callback']))
                     {
-                        ($this->createCoCallable)(function() use($task, $param, $result){
+                        ($this->createCoCallable)(function () use ($task, $param, $result) {
                             $task['callback']($param, $result);
                         });
                     }
                 }
             }
-        } while($this->running);
+        } while ($this->running);
     }
 
     /**
-     * 检测是否正在运行
+     * 检测是否正在运行.
      *
-     * @return boolean
-     */ 
+     * @return bool
+     */
     public function isRunning()
     {
         return $this->running;
     }
 
     /**
-     * 获取队列中待执行任务长度
+     * 获取队列中待执行任务长度.
      *
      * @return int
      */
@@ -243,5 +255,4 @@ class CoPool
     {
         return $this->taskQueue->length();
     }
-
 }

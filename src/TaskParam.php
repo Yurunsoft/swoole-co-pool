@@ -1,4 +1,5 @@
 <?php
+
 namespace Yurun\Swoole\CoPool;
 
 use Yurun\Swoole\CoPool\Interfaces\ITaskParam;
@@ -6,14 +7,14 @@ use Yurun\Swoole\CoPool\Interfaces\ITaskParam;
 class TaskParam implements ITaskParam
 {
     /**
-     * 当前协程在协程池中的顺序，从0开始编号
+     * 当前协程在协程池中的顺序，从0开始编号.
      *
      * @var int
      */
     private $index;
 
     /**
-     * 数据
+     * 数据.
      *
      * @var mixed
      */
@@ -26,7 +27,7 @@ class TaskParam implements ITaskParam
     }
 
     /**
-     * 获取数据
+     * 获取数据.
      *
      * @return mixed
      */
@@ -36,7 +37,7 @@ class TaskParam implements ITaskParam
     }
 
     /**
-     * 获取当前协程在协程池中的顺序，从0开始编号
+     * 获取当前协程在协程池中的顺序，从0开始编号.
      *
      * @return int
      */
@@ -44,5 +45,4 @@ class TaskParam implements ITaskParam
     {
         return $this->index;
     }
-
 }

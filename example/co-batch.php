@@ -4,15 +4,15 @@ use Yurun\Swoole\CoPool\CoBatch;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-go(function(){
+go(function () {
     $batch = new CoBatch([
-        function(){
+        function () {
             return 'imi';
         },
-        'a' =>  function(){
+        'a' => function () {
             return 'niu';
         },
-        'b' =>  function(){
+        'b' => function () {
             return 'bi';
         },
     ]);
