@@ -83,6 +83,17 @@ Swoole\Coroutine::create(function () use (&$code) {
             throw $e;
         }
     }
+    finally
+    {
+        if (version_compare(SWOOLE_VERSION, '4.4', '<'))
+        {
+            Swoole\Event::exit();
+        }
+        else
+        {
+            Timer::clearAll();
+        }
+    }
 });
 Swoole\Event::wait();
 exit($code);
