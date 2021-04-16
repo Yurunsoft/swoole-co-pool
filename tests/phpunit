@@ -62,7 +62,7 @@ unset($options);
 require PHPUNIT_COMPOSER_INSTALL;
 
 $code = 0;
-Co\run(function () use (&$code) {
+Swoole\Coroutine::create(function () use (&$code) {
     try
     {
         $code = PHPUnit\TextUI\Command::main(false);
@@ -88,4 +88,5 @@ Co\run(function () use (&$code) {
         Timer::clearAll();
     }
 });
+Swoole\Event::wait();
 exit($code);
