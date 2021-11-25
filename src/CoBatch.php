@@ -91,7 +91,7 @@ class CoBatch
         while ($count < $taskCount)
         {
             $beginTime = microtime(true);
-            $result = $channel->pop($leftTimeout);
+            $result = $channel->pop(null === $leftTimeout ? -1 : $leftTimeout);
             $endTime = microtime(true);
             if (false === $result)
             {
