@@ -87,17 +87,17 @@ class CoBatch
                 });
             }
         }
-        $leftTimeout = $timeout;
+        $leftTimeout = (-1.0 === $timeout ? null : $timeout);
         while ($count < $taskCount)
         {
             $beginTime = microtime(true);
-            $result = $channel->pop($leftTimeout);
+            $result = $channel->pop(null === $leftTimeout ? -1 : $leftTimeout);
             $endTime = microtime(true);
             if (false === $result)
             {
                 break; // 超时
             }
-            if (-1 !== $leftTimeout)
+            if (null !== $leftTimeout)
             {
                 $leftTimeout -= ($endTime - $beginTime);
                 if ($leftTimeout <= 0)
