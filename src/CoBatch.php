@@ -87,7 +87,7 @@ class CoBatch
                 });
             }
         }
-        $leftTimeout = (-1.0 === $timeout ? null : $timeout);
+        $leftTimeout = $timeout;
         while ($count < $taskCount)
         {
             $beginTime = microtime(true);
@@ -97,7 +97,7 @@ class CoBatch
             {
                 break; // 超时
             }
-            if (null !== $leftTimeout)
+            if (-1 !== $leftTimeout)
             {
                 $leftTimeout -= ($endTime - $beginTime);
                 if ($leftTimeout <= 0)
