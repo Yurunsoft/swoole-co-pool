@@ -7,7 +7,9 @@ use Yurun\Swoole\CoPool\CoBatch;
 use Yurun\Swoole\CoPool\CoBatchIterator;
 use function iterator_to_array;
 use function ksort;
+use function mt_rand;
 use function sort;
+use function usleep;
 use function var_dump;
 use function Yurun\Swoole\Coroutine\batch;
 use function Yurun\Swoole\Coroutine\batchIterator;
@@ -164,49 +166,75 @@ class CoBatchIteratorTest extends BaseTest
                 'test' => 'e',
             ], $results);
         });
-//        $this->go(function () {
-//            $timeout = -1;
-//            $limit = 2;
-//            $time = microtime(true);
-//            $results = batchIterator([
-//                function () {
-//                    Coroutine::sleep(1);
-//
-//                    return 'a';
-//                },
-//                function () {
-//                    Coroutine::sleep(1);
-//
-//                    return 'b';
-//                },
-//                function () {
-//                    Coroutine::sleep(1);
-//
-//                    return 'c';
-//                },
-//                function () {
-//                    Coroutine::sleep(1);
-//
-//                    return 'd';
-//                },
-//                'test'  => function () {
-//                    Coroutine::sleep(1);
-//
-//                    return 'e';
-//                },
-//            ], $timeout, $limit);
-//            $results = iterator_to_array($results);
-//            $useTime = round(microtime(true) - $time, 2);
-//            $this->assertGreaterThanOrEqual(3, $useTime);
-//            $this->assertLessThan(4, $useTime);
-//            ksort($results);
-//            $this->assertEquals([
-//                'a',
-//                'b',
-//                'c',
-//                'd',
-//                'test' => 'e',
-//            ], $results);
-//        });
+        $this->go(function () {
+            $timeout = -1;
+            $limit = 2;
+            $time = microtime(true);
+            $results = batchIterator([
+                function () {
+                    Coroutine::sleep(1);
+
+                    return 'a';
+                },
+                function () {
+                    Coroutine::sleep(1);
+
+                    return 'b';
+                },
+                function () {
+                    Coroutine::sleep(1);
+
+                    return 'c';
+                },
+                function () {
+                    Coroutine::sleep(1);
+
+                    return 'd';
+                },
+                'test'  => function () {
+                    Coroutine::sleep(1);
+
+                    return 'e';
+                },
+            ], $timeout, $limit);
+            $results = iterator_to_array($results);
+            $useTime = round(microtime(true) - $time, 2);
+            $this->assertGreaterThanOrEqual(3, $useTime);
+            $this->assertLessThan(4, $useTime);
+            ksort($results);
+            $this->assertEquals([
+                'a',
+                'b',
+                'c',
+                'd',
+                'test' => 'e',
+            ], $results);
+        });
+    }
+
+    public function testBatchEx()
+    {
+        $rawList = [];
+        $fn = function ($size = 100) use (&$rawList) {
+            while ($size--) {
+                $random = mt_rand(1000, 10000);
+                $rawList[$size] = $random;
+                yield $size => function () use ($random) {
+                    usleep($random);
+                    return $random;
+                };
+            }
+        };
+
+        $batch = new CoBatchIterator($fn(), -1, 8);
+        $iter = $batch->exec();
+
+        $result = [];
+        foreach ($iter as $key => $value) {
+            $result[$key] = $value;
+        }
+
+        krsort($result);
+        $this->assertEquals($rawList, $result);
     }
 }
