@@ -164,49 +164,49 @@ class CoBatchIteratorTest extends BaseTest
                 'test' => 'e',
             ], $results);
         });
-        $this->go(function () {
-            $timeout = -1;
-            $limit = 2;
-            $time = microtime(true);
-            $results = batchIterator([
-                function () {
-                    Coroutine::sleep(1);
-
-                    return 'a';
-                },
-                function () {
-                    Coroutine::sleep(1);
-
-                    return 'b';
-                },
-                function () {
-                    Coroutine::sleep(1);
-
-                    return 'c';
-                },
-                function () {
-                    Coroutine::sleep(1);
-
-                    return 'd';
-                },
-                'test'  => function () {
-                    Coroutine::sleep(1);
-
-                    return 'e';
-                },
-            ], $timeout, $limit);
-            $results = iterator_to_array($results);
-            $useTime = round(microtime(true) - $time, 2);
-            $this->assertGreaterThanOrEqual(3, $useTime);
-            $this->assertLessThan(4, $useTime);
-            ksort($results);
-            $this->assertEquals([
-                'a',
-                'b',
-                'c',
-                'd',
-                'test' => 'e',
-            ], $results);
-        });
+//        $this->go(function () {
+//            $timeout = -1;
+//            $limit = 2;
+//            $time = microtime(true);
+//            $results = batchIterator([
+//                function () {
+//                    Coroutine::sleep(1);
+//
+//                    return 'a';
+//                },
+//                function () {
+//                    Coroutine::sleep(1);
+//
+//                    return 'b';
+//                },
+//                function () {
+//                    Coroutine::sleep(1);
+//
+//                    return 'c';
+//                },
+//                function () {
+//                    Coroutine::sleep(1);
+//
+//                    return 'd';
+//                },
+//                'test'  => function () {
+//                    Coroutine::sleep(1);
+//
+//                    return 'e';
+//                },
+//            ], $timeout, $limit);
+//            $results = iterator_to_array($results);
+//            $useTime = round(microtime(true) - $time, 2);
+//            $this->assertGreaterThanOrEqual(3, $useTime);
+//            $this->assertLessThan(4, $useTime);
+//            ksort($results);
+//            $this->assertEquals([
+//                'a',
+//                'b',
+//                'c',
+//                'd',
+//                'test' => 'e',
+//            ], $results);
+//        });
     }
 }

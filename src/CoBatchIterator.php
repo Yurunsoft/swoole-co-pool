@@ -58,12 +58,16 @@ class CoBatchIterator
         }
         $channel = new Channel(1);
         $wg = new WaitGroup();
+        $running = true;
         if (-1 === $limit)
         {
             foreach ($taskCallables as $key => $callable)
             {
                 $wg->add();
-                Coroutine::create(function () use ($key, $callable, $channel, $wg) {
+                Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
+                    if (!$running) {
+                        return;
+                    }
                     $channel->push([
                         'key'       => $key,
                         'result'    => $callable(),
@@ -77,8 +81,8 @@ class CoBatchIterator
             for ($i = 0; $i < $limit; ++$i)
             {
                 $wg->add();
-                Coroutine::create(function () use ($channel, &$taskCallables, $wg) {
-                    while ($taskCallables->valid())
+                Coroutine::create(function () use ($channel, &$taskCallables, $wg, &$running) {
+                    while ($running && $taskCallables->valid())
                     {
                         $callable = $taskCallables->current();
                         $key = $taskCallables->key();
@@ -92,8 +96,9 @@ class CoBatchIterator
                 });
             }
         }
-        Coroutine::create(function () use ($wg, $channel, $timeout) {
+        Coroutine::create(function () use ($wg, $channel, $timeout, &$running) {
             $wg->wait($timeout ?? -1);
+            $running = false;
             $channel->close();
         });
         while (true)
@@ -105,6 +110,7 @@ class CoBatchIterator
             }
             yield $result['key'] => $result['result'];
         }
+        $running = false;
     }
 
     /**
