@@ -61,34 +61,46 @@ class CoBatchIterator
         $sendTotal = 0;
         if (-1 === $limit)
         {
-            foreach ($taskCallables as $key => $callable)
-            {
-                ++$taskTotal;
+            Coroutine::create(function () use($taskCallables, $wg, $channel, &$running, &$taskTotal) {
                 $wg->add();
-                Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
-                    if ($running)
-                    {
-                        $channel->push([
-                            'key'       => $key,
-                            'result'    => $callable(),
-                        ]);
-                    }
-                    $wg->done();
-                });
-            }
+                foreach ($taskCallables as $key => $callable)
+                {
+                    ++$taskTotal;
+                    Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
+                        if ($running)
+                        {
+                            $channel->push([
+                                'key'       => $key,
+                                'result'    => $callable(),
+                            ]);
+                        }
+                    });
+                }
+                $wg->done();
+            });
         }
         else
         {
+            $taskChannel = new Channel(1);
+            Coroutine::create(function () use ($taskChannel, &$taskCallables, &$running) {
+                while ($running && $taskCallables->valid())
+                {
+                    $taskChannel->push([
+                        'key' => $taskCallables->key(),
+                        'value' => $taskCallables->current(),
+                    ]);
+                    $taskCallables->next();
+                }
+                $taskChannel->close();
+            });
             for ($i = 0; $i < $limit; ++$i)
             {
                 $wg->add();
-                Coroutine::create(function () use ($channel, &$taskCallables, $wg, &$running, &$taskTotal) {
-                    while ($running && $taskCallables->valid())
+                Coroutine::create(function () use ($channel, $taskChannel, $wg, &$running, &$taskTotal) {
+                    while ($running && $task = $taskChannel->pop(-1))
                     {
+                        ['key' => $key, 'value' => $callable] = $task;
                         ++$taskTotal;
-                        $callable = $taskCallables->current();
-                        $key = $taskCallables->key();
-                        $taskCallables->next();
                         $channel->push([
                             'key'       => $key,
                             'result'    => $callable(),

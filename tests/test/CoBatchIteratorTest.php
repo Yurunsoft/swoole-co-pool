@@ -241,6 +241,35 @@ class CoBatchIteratorTest extends BaseTest
         $this->assertEquals($rawList, $result);
     }
 
+    public function testBatchExNoLimit()
+    {
+        $rawList = [];
+        $fn = function ($size = 100) use (&$rawList) {
+            while ($size--)
+            {
+                $random = mt_rand(1000, 10000);
+                $rawList[$size] = $random;
+                yield $size => function () use ($random) {
+                    usleep($random);
+
+                    return $random;
+                };
+            }
+        };
+
+        $batch = new CoBatchIterator($fn(), -1, -1);
+        $iter = $batch->exec();
+
+        $result = [];
+        foreach ($iter as $key => $value)
+        {
+            $result[$key] = $value;
+        }
+        $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
+        krsort($result);
+        $this->assertEquals($rawList, $result);
+    }
+
     private function generateTestData(?array &$rawList): callable
     {
         $rawList = [];
