@@ -5,6 +5,7 @@ namespace Yurun\Swoole\CoPool;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Swoole\Coroutine\WaitGroup;
+use function var_dump;
 
 class CoBatchIterator
 {
@@ -61,30 +62,29 @@ class CoBatchIterator
         $sendTotal = 0;
         if (-1 === $limit)
         {
-            Coroutine::create(function () use($taskCallables, $wg, $channel, &$running, &$taskTotal) {
+            foreach ($taskCallables as $key => $callable)
+            {
                 $wg->add();
-                foreach ($taskCallables as $key => $callable)
-                {
-                    ++$taskTotal;
-                    Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
-                        if ($running)
-                        {
-                            $channel->push([
-                                'key'       => $key,
-                                'result'    => $callable(),
-                            ]);
-                        }
-                    });
-                }
-                $wg->done();
-            });
+                ++$taskTotal;
+                Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
+                    if ($running)
+                    {
+                        $channel->push([
+                            'key'       => $key,
+                            'result'    => $callable(),
+                        ]);
+                    }
+                    $wg->done();
+                });
+            }
         }
         else
         {
             $taskChannel = new Channel(1);
-            Coroutine::create(function () use ($taskChannel, &$taskCallables, &$running) {
+            Coroutine::create(function () use ($taskChannel, &$taskCallables, &$running, &$taskTotal) {
                 while ($running && $taskCallables->valid())
                 {
+                    ++$taskTotal;
                     $taskChannel->push([
                         'key' => $taskCallables->key(),
                         'value' => $taskCallables->current(),
@@ -96,11 +96,10 @@ class CoBatchIterator
             for ($i = 0; $i < $limit; ++$i)
             {
                 $wg->add();
-                Coroutine::create(function () use ($channel, $taskChannel, $wg, &$running, &$taskTotal) {
+                Coroutine::create(function () use ($channel, $taskChannel, $wg, &$running) {
                     while ($running && $task = $taskChannel->pop(-1))
                     {
                         ['key' => $key, 'value' => $callable] = $task;
-                        ++$taskTotal;
                         $channel->push([
                             'key'       => $key,
                             'result'    => $callable(),
@@ -123,7 +122,7 @@ class CoBatchIterator
             {
                 break; // 超时 or 被关闭
             }
-            ++$sendTotal;
+            $sendTotal++;
             $continue = yield $result['key'] => $result['result'];
             if (false === $continue)
             {
