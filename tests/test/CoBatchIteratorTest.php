@@ -6,6 +6,8 @@ use Swoole\Coroutine;
 use Yurun\Swoole\CoPool\CoBatch;
 use Yurun\Swoole\CoPool\CoBatchIterator;
 use function iterator_to_array;
+use function ksort;
+use function sort;
 use function var_dump;
 use function Yurun\Swoole\Coroutine\batch;
 use function Yurun\Swoole\Coroutine\batchIterator;
@@ -13,6 +15,11 @@ use function Yurun\Swoole\Coroutine\goWait;
 
 class CoBatchIteratorTest extends BaseTest
 {
+    private function arrSort ()
+    {
+
+    }
+
     public function testBatch()
     {
         $this->go(function () {
@@ -28,6 +35,7 @@ class CoBatchIteratorTest extends BaseTest
                 },
             ]);
             $results = iterator_to_array($batch->exec());
+            ksort($results);
             $this->assertEquals([
                 'imi',
                 'a' => 'niu',
@@ -46,11 +54,13 @@ class CoBatchIteratorTest extends BaseTest
                     return 'bi';
                 },
             ]);
+            $results = iterator_to_array($results);
+            ksort($results);
             $this->assertEquals([
                 'imi',
                 'a' => 'niu',
                 'b' => 'bi',
-            ], iterator_to_array($results));
+            ], $results);
         });
     }
 
@@ -76,6 +86,7 @@ class CoBatchIteratorTest extends BaseTest
             ]);
             $timeout = 1;
             $results = iterator_to_array($batch->exec($timeout));
+            ksort($results);
             $this->assertEquals([
                 'imi',
             ], $results);
@@ -99,9 +110,11 @@ class CoBatchIteratorTest extends BaseTest
                     return 'bi';
                 },
             ], $timeout);
+            $results = iterator_to_array($results);
+            ksort($results);
             $this->assertEquals([
                 'imi',
-            ], iterator_to_array($results));
+            ], $results);
         });
     }
 
@@ -142,6 +155,7 @@ class CoBatchIteratorTest extends BaseTest
             $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
+            ksort($results);
             $this->assertEquals([
                 'a',
                 'b',
@@ -185,6 +199,7 @@ class CoBatchIteratorTest extends BaseTest
             $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
+            ksort($results);
             $this->assertEquals([
                 'a',
                 'b',
