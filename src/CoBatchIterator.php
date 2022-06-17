@@ -65,13 +65,12 @@ class CoBatchIterator
             {
                 $wg->add();
                 Coroutine::create(function () use ($key, $callable, $channel, $wg, &$running) {
-                    if (!$running) {
-                        return;
+                    if ($running) {
+                        $channel->push([
+                            'key'       => $key,
+                            'result'    => $callable(),
+                        ]);
                     }
-                    $channel->push([
-                        'key'       => $key,
-                        'result'    => $callable(),
-                    ]);
                     $wg->done();
                 });
             }
@@ -101,6 +100,7 @@ class CoBatchIterator
             $running = false;
             $channel->close();
         });
+        $count = 0;
         while (true)
         {
             $result = $channel->pop(-1);
@@ -108,9 +108,15 @@ class CoBatchIterator
             {
                 break; // 超时 or 被关闭
             }
-            yield $result['key'] => $result['result'];
+            $count++;
+            $continue = yield $result['key'] => $result['result'];
+            if (false === $continue) {
+                $channel->close();
+                break;
+            }
         }
         $running = false;
+        return $count;
     }
 
     /**

@@ -5,7 +5,9 @@ namespace Yurun\Swoole\CoPool\Test;
 use Swoole\Coroutine;
 use Yurun\Swoole\CoPool\CoBatch;
 use Yurun\Swoole\CoPool\CoBatchIterator;
+use function array_intersect_key;
 use function iterator_to_array;
+use function krsort;
 use function ksort;
 use function mt_rand;
 use function sort;
@@ -236,5 +238,85 @@ class CoBatchIteratorTest extends BaseTest
 
         krsort($result);
         $this->assertEquals($rawList, $result);
+    }
+
+    private function generateTestData(?array &$rawList): callable
+    {
+        $rawList = [];
+        return function ($size = 100) use (&$rawList) {
+            while ($size--) {
+                $random = mt_rand(1000, 10000);
+                $rawList[$size] = $random;
+                yield $size => function () use ($random) {
+                    usleep($random);
+                    return $random;
+                };
+            }
+        };
+    }
+
+    public function testBatchExNoLimitBreak()
+    {
+        $fn = $this->generateTestData($rawList);
+
+        $batch = new CoBatchIterator($fn(), -1, -1);
+        $iter = $batch->exec();
+
+        $result = [];
+        foreach ($iter as $key => $value) {
+            $result[$key] = $value;
+            if ($key === 50) {
+                break;
+            }
+        }
+        $iter->send(false);
+
+        krsort($result);
+        $this->assertNotEmpty($result);
+        $this->assertEquals(array_intersect_key($rawList, $result), $result);
+    }
+
+    public function testBatchExLimitBreak()
+    {
+        $fn = $this->generateTestData($rawList);
+
+        $batch = new CoBatchIterator($fn(), -1, 8);
+        $iter = $batch->exec();
+
+        $result = [];
+        foreach ($iter as $key => $value) {
+            $result[$key] = $value;
+            if ($key === 50) {
+                break;
+            }
+        }
+        $iter->send(false);
+
+        krsort($result);
+        $this->assertNotEmpty($result);
+        $this->assertEquals(array_intersect_key($rawList, $result), $result);
+    }
+
+    public function testBatchExBreak2()
+    {
+        $fn = $this->generateTestData($rawList);
+
+        $batch = new CoBatchIterator($fn(), -1, 8);
+        $iter = $batch->exec();
+
+        $result = [];
+        while ($iter->valid()) {
+            $result[$iter->key()] = $iter->current();
+            if ($iter->key() === 50) {
+                $iter->send(false);
+                break;
+            }
+            $iter->next();
+        }
+        $this->assertCount($iter->getReturn(), $result);
+
+        krsort($result);
+        $this->assertNotEmpty($result);
+        $this->assertEquals(array_intersect_key($rawList, $result), $result);
     }
 }
