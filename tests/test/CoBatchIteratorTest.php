@@ -2,28 +2,18 @@
 
 namespace Yurun\Swoole\CoPool\Test;
 
-use Swoole\Coroutine;
-use Yurun\Swoole\CoPool\CoBatch;
-use Yurun\Swoole\CoPool\CoBatchIterator;
 use function array_intersect_key;
 use function iterator_to_array;
 use function krsort;
 use function ksort;
 use function mt_rand;
-use function sort;
+use Swoole\Coroutine;
 use function usleep;
-use function var_dump;
-use function Yurun\Swoole\Coroutine\batch;
+use Yurun\Swoole\CoPool\CoBatchIterator;
 use function Yurun\Swoole\Coroutine\batchIterator;
-use function Yurun\Swoole\Coroutine\goWait;
 
 class CoBatchIteratorTest extends BaseTest
 {
-    private function arrSort ()
-    {
-
-    }
-
     public function testBatch()
     {
         $this->go(function () {
@@ -38,7 +28,9 @@ class CoBatchIteratorTest extends BaseTest
                     return 'bi';
                 },
             ]);
-            $results = iterator_to_array($batch->exec());
+            $iter = $batch->exec();
+            $results = iterator_to_array($iter);
+            $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
             ksort($results);
             $this->assertEquals([
                 'imi',
@@ -47,7 +39,7 @@ class CoBatchIteratorTest extends BaseTest
             ], $results);
         });
         $this->go(function () {
-            $results = batchIterator([
+            $iter = batchIterator([
                 function () {
                     return 'imi';
                 },
@@ -58,7 +50,8 @@ class CoBatchIteratorTest extends BaseTest
                     return 'bi';
                 },
             ]);
-            $results = iterator_to_array($results);
+            $results = iterator_to_array($iter);
+            $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
             ksort($results);
             $this->assertEquals([
                 'imi',
@@ -89,7 +82,9 @@ class CoBatchIteratorTest extends BaseTest
                 },
             ]);
             $timeout = 1;
-            $results = iterator_to_array($batch->exec($timeout));
+            $iter = $batch->exec($timeout);
+            $results = iterator_to_array($iter);
+            $this->assertEquals(CoBatchIterator::TIMEOUT, $iter->getReturn());
             ksort($results);
             $this->assertEquals([
                 'imi',
@@ -97,7 +92,7 @@ class CoBatchIteratorTest extends BaseTest
         });
         $this->go(function () {
             $timeout = 1;
-            $results = batchIterator([
+            $iter = batchIterator([
                 function () {
                     Coroutine::sleep(0.5);
 
@@ -114,7 +109,8 @@ class CoBatchIteratorTest extends BaseTest
                     return 'bi';
                 },
             ], $timeout);
-            $results = iterator_to_array($results);
+            $results = iterator_to_array($iter);
+            $this->assertEquals(CoBatchIterator::TIMEOUT, $iter->getReturn());
             ksort($results);
             $this->assertEquals([
                 'imi',
@@ -155,7 +151,8 @@ class CoBatchIteratorTest extends BaseTest
             $timeout = -1;
             $limit = 2;
             $time = microtime(true);
-            $results = iterator_to_array($batch->exec($timeout, $limit));
+            $results = iterator_to_array($iter = $batch->exec($timeout, $limit));
+            $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
             $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
@@ -172,7 +169,7 @@ class CoBatchIteratorTest extends BaseTest
             $timeout = -1;
             $limit = 2;
             $time = microtime(true);
-            $results = batchIterator([
+            $iter = batchIterator([
                 function () {
                     Coroutine::sleep(1);
 
@@ -199,7 +196,8 @@ class CoBatchIteratorTest extends BaseTest
                     return 'e';
                 },
             ], $timeout, $limit);
-            $results = iterator_to_array($results);
+            $results = iterator_to_array($iter);
+            $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
             $useTime = round(microtime(true) - $time, 2);
             $this->assertGreaterThanOrEqual(3, $useTime);
             $this->assertLessThan(4, $useTime);
@@ -218,11 +216,13 @@ class CoBatchIteratorTest extends BaseTest
     {
         $rawList = [];
         $fn = function ($size = 100) use (&$rawList) {
-            while ($size--) {
+            while ($size--)
+            {
                 $random = mt_rand(1000, 10000);
                 $rawList[$size] = $random;
                 yield $size => function () use ($random) {
                     usleep($random);
+
                     return $random;
                 };
             }
@@ -232,10 +232,11 @@ class CoBatchIteratorTest extends BaseTest
         $iter = $batch->exec();
 
         $result = [];
-        foreach ($iter as $key => $value) {
+        foreach ($iter as $key => $value)
+        {
             $result[$key] = $value;
         }
-
+        $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
         krsort($result);
         $this->assertEquals($rawList, $result);
     }
@@ -243,12 +244,15 @@ class CoBatchIteratorTest extends BaseTest
     private function generateTestData(?array &$rawList): callable
     {
         $rawList = [];
+
         return function ($size = 100) use (&$rawList) {
-            while ($size--) {
+            while ($size--)
+            {
                 $random = mt_rand(1000, 10000);
                 $rawList[$size] = $random;
                 yield $size => function () use ($random) {
                     usleep($random);
+
                     return $random;
                 };
             }
@@ -263,9 +267,11 @@ class CoBatchIteratorTest extends BaseTest
         $iter = $batch->exec();
 
         $result = [];
-        foreach ($iter as $key => $value) {
+        foreach ($iter as $key => $value)
+        {
             $result[$key] = $value;
-            if ($key === 50) {
+            if (50 === $key)
+            {
                 break;
             }
         }
@@ -273,6 +279,7 @@ class CoBatchIteratorTest extends BaseTest
 
         krsort($result);
         $this->assertNotEmpty($result);
+        $this->assertEquals(CoBatchIterator::BREAK, $iter->getReturn());
         $this->assertEquals(array_intersect_key($rawList, $result), $result);
     }
 
@@ -284,9 +291,11 @@ class CoBatchIteratorTest extends BaseTest
         $iter = $batch->exec();
 
         $result = [];
-        foreach ($iter as $key => $value) {
+        foreach ($iter as $key => $value)
+        {
             $result[$key] = $value;
-            if ($key === 50) {
+            if (50 === $key)
+            {
                 break;
             }
         }
@@ -294,6 +303,7 @@ class CoBatchIteratorTest extends BaseTest
 
         krsort($result);
         $this->assertNotEmpty($result);
+        $this->assertEquals(CoBatchIterator::BREAK, $iter->getReturn());
         $this->assertEquals(array_intersect_key($rawList, $result), $result);
     }
 
@@ -305,18 +315,20 @@ class CoBatchIteratorTest extends BaseTest
         $iter = $batch->exec();
 
         $result = [];
-        while ($iter->valid()) {
+        while ($iter->valid())
+        {
             $result[$iter->key()] = $iter->current();
-            if ($iter->key() === 50) {
+            if (50 === $iter->key())
+            {
                 $iter->send(false);
                 break;
             }
             $iter->next();
         }
-        $this->assertCount($iter->getReturn(), $result);
 
         krsort($result);
         $this->assertNotEmpty($result);
+        $this->assertEquals(CoBatchIterator::BREAK, $iter->getReturn());
         $this->assertEquals(array_intersect_key($rawList, $result), $result);
     }
 }
