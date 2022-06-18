@@ -2,3 +2,4 @@
 /*.log
 *.lock
 *.cache
+.php_cs.cache
