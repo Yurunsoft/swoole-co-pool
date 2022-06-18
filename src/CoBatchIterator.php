@@ -111,7 +111,7 @@ class CoBatchIterator
         }
         $isTimeout = false;
         Coroutine::create(function () use ($wg, $channel, $timeout, &$running, &$isTimeout) {
-            $isTimeout = !$wg->wait($timeout ?? -1);
+            $isTimeout = false === $wg->wait($timeout ?? -1);
             $running = false;
             $channel->close();
         });

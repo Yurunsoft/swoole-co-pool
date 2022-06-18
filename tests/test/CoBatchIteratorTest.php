@@ -212,6 +212,36 @@ class CoBatchIteratorTest extends BaseTest
         });
     }
 
+    public function testBatchNoTimeout()
+    {
+        $batch = new CoBatchIterator([
+            function () {
+                Coroutine::sleep(0.5);
+
+                return 'imi';
+            },
+            'a' => function () {
+                Coroutine::sleep(1);
+
+                return 'niu';
+            },
+            'b' => function () {
+                Coroutine::sleep(1.5);
+
+                return 'bi';
+            },
+        ]);
+        $iter = $batch->exec(3);
+        $results = iterator_to_array($iter);
+        $this->assertEquals(CoBatchIterator::SUCCESS, $iter->getReturn());
+        ksort($results);
+        $this->assertEquals([
+            'imi',
+            'a' => 'niu',
+            'b' => 'bi',
+        ], $results);
+    }
+
     public function testBatchEx()
     {
         $rawList = [];
