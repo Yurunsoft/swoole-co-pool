@@ -57,11 +57,15 @@ class CoBatch
             foreach ($taskCallables as $key => $callable)
             {
                 $results[$key] = null;
-                Coroutine::create(function () use ($key, $callable, $channel) {
-                    $channel->push([
-                        'key'       => $key,
-                        'result'    => $callable(),
-                    ]);
+                Coroutine::create(function () use ($key, $callable, $channel, &$running) {
+                    $result = $callable();
+                    if ($running)
+                    {
+                        $channel->push([
+                            'key'       => $key,
+                            'result'    => $result,
+                        ]);
+                    }
                 });
             }
         }
@@ -79,10 +83,14 @@ class CoBatch
                     {
                         $key = key($taskCallables);
                         next($taskCallables);
-                        $channel->push([
-                            'key'       => $key,
-                            'result'    => $callable(),
-                        ]);
+                        $result = $callable();
+                        if ($running)
+                        {
+                            $channel->push([
+                                'key'       => $key,
+                                'result'    => $result,
+                            ]);
+                        }
                     }
                 });
             }
