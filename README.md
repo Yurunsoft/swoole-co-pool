@@ -133,6 +133,72 @@ batch([
 // batch($callables, $timeout, $limit);
 ```
 
+### 批量执行协程(迭代器模式)
+
+支持通过数组、迭代器批量执行，并返回结果（不保证原始顺序）。  
+> 1. 适合对大型结果集、不确定长度结果集进行协程并发计算并取得计算结果。  
+> 2. 相对于普通批量执行（CoBatch）可以更好地控制内存使用量。
+
+```php
+use Yurun\Swoole\CoPool\CoBatchIterator;
+
+$input = function ($size = 100) {
+    while ($size--)
+    {
+        $random = mt_rand(100, 900);
+        yield $size => function () use ($random) {
+            // 模拟IO任务
+            usleep($random * 10);
+
+            return $random;
+        };
+    }
+};
+
+$timeout = -1; // 支持超时
+$limit = 8;    // 限制同时工作协程数量
+$batch = new CoBatchIterator($input(), $timeout, $limit);
+$iter = $batch->exec();
+
+foreach ($iter as $key => $value)
+{
+    if ($value > 500)
+    {
+        // 获得符合要求的结果，执行相应的代码逻辑并中断循环
+        // 业务代码...
+        
+        // 可以发送`false`到迭代器中止仍在运行的协程快速回收资源
+        $iter->send(false);
+        break;
+    }
+}
+
+// 可以查看批量执行是以什么方式退出的
+var_dump($result = $iter->getReturn());
+// $result === CoBatchIterator::SUCCESS; // 全部任务完成
+// $result === CoBatchIterator::BREAK;   // 执行被主动中断
+// $result === CoBatchIterator::TIMEOUT; // 任务超时
+// $result === CoBatchIterator::UNKNOWN; // 未知原因（一般情况不会发生）
+```
+
+快捷函数：
+
+```php
+use function Yurun\Swoole\Coroutine\batchIterator;
+batchIterator([
+    function(){
+        return 'imi';
+    },
+    'a' =>  function(){
+        return 'niu';
+    },
+    'b' =>  function(){
+        return 'bi';
+    },
+]);
+// batchIterator($callables, $timeout, $limit);
+```
+
 ### 执行单个协程并等待返回值
 
 ```php
