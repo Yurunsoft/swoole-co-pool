@@ -245,7 +245,7 @@ class CoBatchTest extends BaseTest
                 'b' => function () {
                     return 'bi';
                 },
-            ], -1, -1, $throws);
+            ], -1, -1, false, $throws);
             $this->assertEquals([
                 'imi',
                 'a' => null,
@@ -253,6 +253,19 @@ class CoBatchTest extends BaseTest
             ], $results);
             $this->assertTrue(isset($throws['a']));
             $this->assertInstanceOf(\RuntimeException::class, $throws['a']);
+
+            $this->expectExceptionMessage('gg');
+            batch([
+                function () {
+                    return 'imi';
+                },
+                'a' => function () {
+                    throw new \RuntimeException('gg');
+                },
+                'b' => function () {
+                    return 'bi';
+                },
+            ], -1, -1, true);
         });
     }
 }

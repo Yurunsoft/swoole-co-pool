@@ -133,7 +133,8 @@ batch([
     },
 ]);
 // batch($callables, $timeout, $limit);
-// batch($callables, $timeout, $limit, $throws); // 捕获异常
+// batch($callables, $timeout, $limit, true); // 捕获异常并在当前上下文抛出
+// batch($callables, $timeout, $limit, false, $throws); // 捕获异常
 // $throws 值为异常对象数组，成员键名和传入数组中的一致。没有异常则为空数组。
 ```
 
