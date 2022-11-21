@@ -212,6 +212,21 @@ $result = goWait(function(){
     return 'wait result';
 });
 echo $result; // wait result
+
+// 最大执行时间 0.5 秒，超过时间返回 null，但任务不会中断
+$result = goWait(function(){
+    \Swoole\Coroutine::sleep(1);
+    return 'wait result';
+}, 0.5);
+
+// 捕获异常并在当前上下文抛出
+try {
+    $result = goWait(function(){
+        throw new \RuntimeException('gg');
+    }, -1, true); // 第 3 个参数传 true
+} catch(\Throwable $th) {
+    var_dump($th);
+}
 ```
 
 ### 通道容器

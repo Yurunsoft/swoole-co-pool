@@ -203,6 +203,11 @@ class CoBatchTest extends BaseTest
                 return 'wait result';
             });
             $this->assertEquals('wait result', $result);
+
+            $this->expectExceptionMessage('gg');
+            goWait(function () {
+                throw new \RuntimeException('gg');
+            }, -1, true);
         });
     }
 

@@ -35,7 +35,13 @@ function batchIterator(iterable $taskCallables, ?float $timeout = -1, ?int $limi
  * @param callable   $callable 任务回调列表
  * @param float|null $timeout  超时时间，为 -1 则不限时
  */
-function goWait(callable $callable, ?float $timeout = -1)
+function goWait(callable $callable, ?float $timeout = -1, $throwException = false)
 {
-    return CoBatch::__exec([$callable], $timeout)[0] ?? null;
+    $result = CoBatch::__exec([$callable], $timeout, -1, $throws)[0] ?? null;
+    if ($throwException && $throws)
+    {
+        throw reset($throws);
+    }
+
+    return $result;
 }
