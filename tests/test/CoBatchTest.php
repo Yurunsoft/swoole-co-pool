@@ -205,4 +205,49 @@ class CoBatchTest extends BaseTest
             $this->assertEquals('wait result', $result);
         });
     }
+
+    public function testException()
+    {
+        $this->go(function () {
+            $batch = new CoBatch([
+                function () {
+                    return 'imi';
+                },
+                'a' => function () {
+                    throw new \RuntimeException('gg');
+                },
+                'b' => function () {
+                    return 'bi';
+                },
+            ]);
+            $results = $batch->exec(null, null, $throws);
+            $this->assertEquals([
+                'imi',
+                'a' => null,
+                'b' => 'bi',
+            ], $results);
+            $this->assertTrue(isset($throws['a']));
+            $this->assertInstanceOf(\RuntimeException::class, $throws['a']);
+        });
+        $this->go(function () {
+            $results = batch([
+                function () {
+                    return 'imi';
+                },
+                'a' => function () {
+                    throw new \RuntimeException('gg');
+                },
+                'b' => function () {
+                    return 'bi';
+                },
+            ], -1, -1, $throws);
+            $this->assertEquals([
+                'imi',
+                'a' => null,
+                'b' => 'bi',
+            ], $results);
+            $this->assertTrue(isset($throws['a']));
+            $this->assertInstanceOf(\RuntimeException::class, $throws['a']);
+        });
+    }
 }

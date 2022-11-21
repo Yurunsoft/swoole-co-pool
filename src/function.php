@@ -12,9 +12,9 @@ use Yurun\Swoole\CoPool\CoBatchIterator;
  * @param float|null $timeout       超时时间，为 -1 则不限时
  * @param int|null   $limit         限制并发协程数量，为 -1 则不限制
  */
-function batch(array $taskCallables, ?float $timeout = -1, ?int $limit = -1): array
+function batch(array $taskCallables, ?float $timeout = -1, ?int $limit = -1, ?array &$throws = null): array
 {
-    return CoBatch::__exec($taskCallables, $timeout, $limit);
+    return CoBatch::__exec($taskCallables, $timeout, $limit, $throws);
 }
 
 /**

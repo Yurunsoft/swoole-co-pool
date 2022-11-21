@@ -106,6 +106,7 @@ $results = $batch->exec();
 // $timeout = -1; // 支持超时
 // $limit = -1; // 限制同时工作协程数量
 // $results = $batch->exec($timeout, $limit);
+// $results = $batch->exec($timeout, $limit, $throws); // 捕获异常
 var_dump($results);
 // $results 值为:
 // [
@@ -113,6 +114,7 @@ var_dump($results);
 //     'a' =>  'niu',
 //     'b' =>  'bi',
 // ]
+// $throws 值为异常对象数组，成员键名和传入数组中的一致。没有异常则为空数组。
 ```
 
 快捷函数：
@@ -131,6 +133,8 @@ batch([
     },
 ]);
 // batch($callables, $timeout, $limit);
+// batch($callables, $timeout, $limit, $throws); // 捕获异常
+// $throws 值为异常对象数组，成员键名和传入数组中的一致。没有异常则为空数组。
 ```
 
 ### 批量执行协程(迭代器模式)

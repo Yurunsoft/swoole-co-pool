@@ -45,26 +45,40 @@ class CoBatch
      * @param float|null $timeout       超时时间，为 -1 则不限时
      * @param int|null   $limit         限制并发协程数量，为 -1 则不限制
      */
-    public static function __exec(array $taskCallables, ?float $timeout = -1, ?int $limit = -1): array
+    public static function __exec(array $taskCallables, ?float $timeout = -1, ?int $limit = -1, ?array &$throws = null): array
     {
         $channel = new Channel(1);
         $taskCount = \count($taskCallables);
         $count = 0;
         $results = [];
         $running = true;
+        $throws = [];
         if (-1 === $limit)
         {
             foreach ($taskCallables as $key => $callable)
             {
                 $results[$key] = null;
                 Coroutine::create(function () use ($key, $callable, $channel, &$running) {
-                    $result = $callable();
-                    if ($running)
+                    try
                     {
-                        $channel->push([
-                            'key'       => $key,
-                            'result'    => $result,
-                        ]);
+                        $result = $callable();
+                        if ($running)
+                        {
+                            $channel->push([
+                                'key'       => $key,
+                                'result'    => $result,
+                            ]);
+                        }
+                    }
+                    catch (\Throwable $th)
+                    {
+                        if ($running)
+                        {
+                            $channel->push([
+                                'key'   => $key,
+                                'throw' => $th,
+                            ]);
+                        }
                     }
                 });
             }
@@ -83,13 +97,26 @@ class CoBatch
                     {
                         $key = key($taskCallables);
                         next($taskCallables);
-                        $result = $callable();
-                        if ($running)
+                        try
                         {
-                            $channel->push([
-                                'key'       => $key,
-                                'result'    => $result,
-                            ]);
+                            $result = $callable();
+                            if ($running)
+                            {
+                                $channel->push([
+                                    'key'       => $key,
+                                    'result'    => $result,
+                                ]);
+                            }
+                        }
+                        catch (\Throwable $th)
+                        {
+                            if ($running)
+                            {
+                                $channel->push([
+                                    'key'   => $key,
+                                    'throw' => $th,
+                                ]);
+                            }
                         }
                     }
                 });
@@ -114,7 +141,14 @@ class CoBatch
                 }
             }
             ++$count;
-            $results[$result['key']] = $result['result'];
+            if (isset($result['throw']))
+            {
+                $throws[$result['key']] = $result['throw'];
+            }
+            else
+            {
+                $results[$result['key']] = $result['result'];
+            }
         }
         $running = false;
 
@@ -127,7 +161,7 @@ class CoBatch
      * @param float|null $timeout 超时时间，为 -1 则不限时
      * @param int|null   $limit   限制并发协程数量，为 -1 则不限制
      */
-    public function exec(?float $timeout = null, ?int $limit = null): array
+    public function exec(?float $timeout = null, ?int $limit = null, ?array &$throws = null): array
     {
         if (null === $timeout)
         {
@@ -138,6 +172,6 @@ class CoBatch
             $limit = $this->limit ?? -1;
         }
 
-        return static::__exec($this->taskCallables, $timeout, $limit);
+        return static::__exec($this->taskCallables, $timeout, $limit, $throws);
     }
 }
