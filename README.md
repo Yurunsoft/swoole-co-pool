@@ -106,6 +106,7 @@ $results = $batch->exec();
 // $timeout = -1; // 支持超时
 // $limit = -1; // 限制同时工作协程数量
 // $results = $batch->exec($timeout, $limit);
+// $results = $batch->exec($timeout, $limit, $throws); // 捕获异常
 var_dump($results);
 // $results 值为:
 // [
@@ -113,6 +114,7 @@ var_dump($results);
 //     'a' =>  'niu',
 //     'b' =>  'bi',
 // ]
+// $throws 值为异常对象数组，成员键名和传入数组中的一致。没有异常则为空数组。
 ```
 
 快捷函数：
@@ -131,6 +133,8 @@ batch([
     },
 ]);
 // batch($callables, $timeout, $limit);
+// batch($callables, $timeout, $limit, $throws); // 捕获异常
+// $throws 值为异常对象数组，成员键名和传入数组中的一致。没有异常则为空数组。
 ```
 
 ### 批量执行协程(迭代器模式)
@@ -208,6 +212,21 @@ $result = goWait(function(){
     return 'wait result';
 });
 echo $result; // wait result
+
+// 最大执行时间 0.5 秒，超过时间返回 null，但任务不会中断
+$result = goWait(function(){
+    \Swoole\Coroutine::sleep(1);
+    return 'wait result';
+}, 0.5);
+
+// 捕获异常并在当前上下文抛出
+try {
+    $result = goWait(function(){
+        throw new \RuntimeException('gg');
+    }, -1, true); // 第 3 个参数传 true
+} catch(\Throwable $th) {
+    var_dump($th);
+}
 ```
 
 ### 通道容器
