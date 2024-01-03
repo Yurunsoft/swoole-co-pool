@@ -4,6 +4,7 @@ namespace Yurun\Swoole\CoPool\Test;
 
 use Swoole\Coroutine;
 use Yurun\Swoole\CoPool\CoBatch;
+use Yurun\Swoole\CoPool\Exception\TimeoutException;
 use function Yurun\Swoole\Coroutine\batch;
 use function Yurun\Swoole\Coroutine\goWait;
 
@@ -71,12 +72,15 @@ class CoBatchTest extends BaseTest
                 },
             ]);
             $timeout = 1;
-            $results = $batch->exec($timeout);
+            $results = $batch->exec($timeout, null, $throws);
             $this->assertEquals([
                 'imi',
                 'a' => null,
                 'b' => null,
             ], $results);
+            $this->assertFalse(isset($throws[0]));
+            $this->assertInstanceOf(TimeoutException::class, $throws['a']);
+            $this->assertInstanceOf(TimeoutException::class, $throws['b']);
         });
         $this->go(function () {
             $timeout = 1;
@@ -96,12 +100,15 @@ class CoBatchTest extends BaseTest
 
                     return 'bi';
                 },
-            ], $timeout);
+            ], $timeout, -1, false, $throws);
             $this->assertEquals([
                 'imi',
                 'a' => null,
                 'b' => null,
             ], $results);
+            $this->assertFalse(isset($throws[0]));
+            $this->assertInstanceOf(TimeoutException::class, $throws['a']);
+            $this->assertInstanceOf(TimeoutException::class, $throws['b']);
         });
     }
 

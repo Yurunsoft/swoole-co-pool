@@ -4,6 +4,7 @@ namespace Yurun\Swoole\CoPool;
 
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
+use Yurun\Swoole\CoPool\Exception\TimeoutException;
 
 /**
  * 协程批量执行器.
@@ -57,7 +58,6 @@ class CoBatch
         {
             foreach ($taskCallables as $key => $callable)
             {
-                $results[$key] = null;
                 Coroutine::create(function () use ($key, $callable, $channel, &$running) {
                     try
                     {
@@ -85,10 +85,6 @@ class CoBatch
         }
         else
         {
-            foreach ($taskCallables as $key => $callable)
-            {
-                $results[$key] = null;
-            }
             reset($taskCallables);
             for ($i = 0; $i < $limit; ++$i)
             {
@@ -123,6 +119,7 @@ class CoBatch
             }
         }
         $leftTimeout = (-1.0 === $timeout ? null : $timeout);
+        $timeoutException = null;
         while ($count < $taskCount)
         {
             $beginTime = microtime(true);
@@ -130,6 +127,7 @@ class CoBatch
             $endTime = microtime(true);
             if (false === $result)
             {
+                $timeoutException = new TimeoutException();
                 break; // 超时
             }
             if (null !== $leftTimeout)
@@ -137,6 +135,7 @@ class CoBatch
                 $leftTimeout -= ($endTime - $beginTime);
                 if ($leftTimeout <= 0)
                 {
+                    $timeoutException = new TimeoutException();
                     break; // 剩余超时时间不足
                 }
             }
@@ -151,6 +150,24 @@ class CoBatch
             }
         }
         $running = false;
+        $tmpResults = $results;
+        $results = [];
+        $tmpTaskCallables = $taskCallables;
+        foreach ($tmpTaskCallables as $key => $callable)
+        {
+            if (\array_key_exists($key, $tmpResults))
+            {
+                $results[$key] = $tmpResults[$key];
+            }
+            else
+            {
+                $results[$key] = null;
+                if ($timeoutException)
+                {
+                    $throws[$key] = $timeoutException;
+                }
+            }
+        }
 
         return $results;
     }
